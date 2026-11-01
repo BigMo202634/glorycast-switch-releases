@@ -1,0 +1,31 @@
+name: Publish downloads
+
+# Every push that changes files/ publishes them as a new release, so the
+# releases/latest link always gives the newest GloryCast Switch.
+on:
+  push:
+    branches: [main]
+    paths: ["files/**", ".github/workflows/release.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          v=$(head -n1 files/version.txt | tr -d '[:space:]')
+          tag="v${v}-${GITHUB_RUN_NUMBER}"
+          notes="GloryCast Switch ${v}
+
+          - Windows: GloryCast-Switch-Windows.zip (Extract All, then double-click Start GloryCast Switch (Windows).bat)
+          - Mac: GloryCast-Switch-Mac-app.zip (unzip in Finder, drag to Applications, right-click > Open the first time)
+          - Android phone: GloryCast-Switch.apk (finds OBS on the Wi-Fi by itself)"
+          gh release create "$tag" --title "GloryCast Switch ${v}" --notes "$notes" --latest \
+            files/GloryCast-Switch-Windows.zip files/GloryCast-Switch-Mac-app.zip files/GloryCast-Switch.apk
